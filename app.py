@@ -3,6 +3,8 @@ import jwt
 import datetime
 import os
 from functools import wraps
+from flask import render_template
+
 
 app = Flask(__name__)
 
@@ -122,7 +124,7 @@ def healthz():
 
 @app.route("/")
 def home():
-    return "JWT Security Demo API"
+    return render_template("index.html")
 
 
 if __name__ == "__main__":
