@@ -31,14 +31,15 @@ jwt-demo/
 ├── README.md
 ├── templates/
 │   └── index.html
-├── static/
-│   └── assets/
-│       ├── css/
-│       │   └── style.css
-│       ├── js/
-│       │   └── main.js
-│       └── img/
-│           └── logo.png
+└── static/
+    └── assets/
+        ├── css/
+        │   └── style.css
+        ├── js/
+        │   └── main.js
+        └── img/
+            └── logo.png
+
 
 # JWT Demo – Flask + PyJWT
 
