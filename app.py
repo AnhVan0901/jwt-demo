@@ -1,29 +1,21 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import jwt
 import datetime
 import os
 from functools import wraps
-from flask import render_template
-
 
 app = Flask(__name__)
 
 # ======================
-# ❌ Secret yếu (demo attack)
+# 🔑 CHỈ 1 SECRET DUY NHẤT
 # ======================
-WEAK_SECRET = "secret"
-
-# ======================
-# ✅ Secret mạnh (Cloud / Secure)
-# Lấy từ environment variable
-# ======================
-STRONG_SECRET = os.environ.get(
+JWT_SECRET = os.environ.get(
     "JWT_SECRET",
-    "DEV_FALLBACK_SECRET_DO_NOT_USE_IN_PROD"
+    "secret"  # ❌ mặc định yếu để demo local
 )
 
 # ======================
-# LOGIN – tạo JWT (CỐ TÌNH YẾU)
+# LOGIN – tạo JWT bằng SECRET YẾU
 # ======================
 @app.route("/login", methods=["POST"])
 def login():
@@ -38,18 +30,17 @@ def login():
             "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
         }
 
-        # ❌ Dùng secret yếu để demo bị forge
-        token = jwt.encode(payload, WEAK_SECRET, algorithm="HS256")
+        # ❌ Cố tình ký bằng secret yếu
+        token = jwt.encode(payload, JWT_SECRET, algorithm="HS256")
         return jsonify({"token": token})
 
     return jsonify({"message": "Login failed"}), 401
 
 
 # ======================
-# ❌ VULNERABLE JWT CHECK
-# Không verify chữ ký
+# ❌ JWT CHECK YẾU (NHƯNG CÓ VERIFY)
 # ======================
-def vulnerable_jwt_required(f):
+def weak_jwt_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         token = request.headers.get("Authorization")
@@ -59,11 +50,14 @@ def vulnerable_jwt_required(f):
         try:
             decoded = jwt.decode(
                 token,
-                options={"verify_signature": False}
+                JWT_SECRET,           
+                algorithms=["HS256"]
             )
             request.user = decoded
-        except Exception as e:
-            return jsonify({"error": str(e)}), 401
+        except jwt.ExpiredSignatureError:
+            return jsonify({"message": "Token expired"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"message": "Invalid token"}), 401
 
         return f(*args, **kwargs)
     return wrapper
@@ -73,7 +67,7 @@ def vulnerable_jwt_required(f):
 # 🔴 API CÓ LỖ HỔNG
 # ======================
 @app.route("/vuln/admin", methods=["GET"])
-@vulnerable_jwt_required
+@weak_jwt_required
 def vuln_admin():
     if request.user.get("role") != "admin":
         return jsonify({"message": "Access denied"}), 403
@@ -85,7 +79,7 @@ def vuln_admin():
 
 
 # ======================
-# ✅ API ĐÃ FIX (VERIFY ĐẦY ĐỦ)
+# ✅ API ĐÃ FIX (VERIFY BẰNG SECRET MẠNH)
 # ======================
 @app.route("/secure/admin", methods=["GET"])
 def secure_admin():
@@ -96,7 +90,7 @@ def secure_admin():
     try:
         decoded = jwt.decode(
             token,
-            STRONG_SECRET,
+            JWT_SECRET,
             algorithms=["HS256"]
         )
 
@@ -115,7 +109,7 @@ def secure_admin():
 
 
 # ======================
-# HEALTH CHECK (Render)
+# HEALTH CHECK
 # ======================
 @app.route("/healthz")
 def healthz():
