@@ -65,10 +65,10 @@ pip install flask PyJWT
 
 ## Cấu hình JWT Secret (khuyến nghị)
 Windows (PowerShell):
-setx JWT_SECRET "THIS_IS_A_STRONG_SECRET_KEY_123456"
+$env:JWT_SECRET="secret"
 
 Linux / macOS:
-export JWT_SECRET="THIS_IS_A_STRONG_SECRET_KEY_123456"
+export JWT_SECRET="secret"
 
 ## Chạy ứng dụng
 python app.py
