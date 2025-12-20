@@ -24,7 +24,7 @@ Demo **tạo API đơn giản bằng Flask + PyJWT**, xác thực bằng JWT và
 ---
 
 ## 📁 Project Structure
-
+```
 jwt-demo/
 ├── app.py
 ├── requirements.txt
@@ -39,9 +39,11 @@ jwt-demo/
         │   └── main.js
         └── img/
             └── logo.png
+```
 
+---
 
-# JWT Demo – Flask + PyJWT
+# 📌 JWT Demo – Flask + PyJWT
 
 Demo API Flask sử dụng JWT để xác thực và mô phỏng lỗ hổng JWT không an toàn (secret yếu, không verify chữ ký).
 
