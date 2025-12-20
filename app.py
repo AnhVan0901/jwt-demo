@@ -1,22 +1,27 @@
 from flask import Flask, request, jsonify
 import jwt
 import datetime
+import os
 from functools import wraps
 
 app = Flask(__name__)
 
 # ======================
-# ❌ Secret yếu (demo)
+# ❌ Secret yếu (demo attack)
 # ======================
 WEAK_SECRET = "secret"
 
 # ======================
-# ✅ Secret mạnh (fix)
+# ✅ Secret mạnh (Cloud / Secure)
+# Lấy từ environment variable
 # ======================
-STRONG_SECRET = "STRONG_SECRET_2025!@#"
+STRONG_SECRET = os.environ.get(
+    "JWT_SECRET",
+    "DEV_FALLBACK_SECRET_DO_NOT_USE_IN_PROD"
+)
 
 # ======================
-# LOGIN – tạo JWT
+# LOGIN – tạo JWT (CỐ TÌNH YẾU)
 # ======================
 @app.route("/login", methods=["POST"])
 def login():
@@ -31,6 +36,7 @@ def login():
             "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
         }
 
+        # ❌ Dùng secret yếu để demo bị forge
         token = jwt.encode(payload, WEAK_SECRET, algorithm="HS256")
         return jsonify({"token": token})
 
@@ -39,22 +45,25 @@ def login():
 
 # ======================
 # ❌ VULNERABLE JWT CHECK
+# Không verify chữ ký
 # ======================
 def vulnerable_jwt_required(f):
     @wraps(f)
-    def wrapper():
+    def wrapper(*args, **kwargs):
         token = request.headers.get("Authorization")
         if not token:
             return jsonify({"message": "Token missing"}), 401
 
         try:
-            # ❌ KHÔNG verify chữ ký
-            decoded = jwt.decode(token, options={"verify_signature": False})
+            decoded = jwt.decode(
+                token,
+                options={"verify_signature": False}
+            )
             request.user = decoded
         except Exception as e:
             return jsonify({"error": str(e)}), 401
 
-        return f()
+        return f(*args, **kwargs)
     return wrapper
 
 
@@ -74,7 +83,7 @@ def vuln_admin():
 
 
 # ======================
-# ✅ API ĐÃ FIX
+# ✅ API ĐÃ FIX (VERIFY ĐẦY ĐỦ)
 # ======================
 @app.route("/secure/admin", methods=["GET"])
 def secure_admin():
@@ -101,6 +110,14 @@ def secure_admin():
         return jsonify({"message": "Token expired"}), 401
     except jwt.InvalidTokenError:
         return jsonify({"message": "Invalid token"}), 401
+
+
+# ======================
+# HEALTH CHECK (Render)
+# ======================
+@app.route("/healthz")
+def healthz():
+    return "OK", 200
 
 
 @app.route("/")
