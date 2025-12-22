@@ -7,11 +7,11 @@ from functools import wraps
 app = Flask(__name__)
 
 # ======================
-# 🔑 CHỈ 1 SECRET DUY NHẤT
+# CHỈ 1 SECRET DUY NHẤT
 # ======================
 JWT_SECRET = os.environ.get(
     "JWT_SECRET",
-    "secret"  # ❌ mặc định yếu để demo local
+    "secret"  # mặc định yếu để demo local
 )
 
 # ======================
@@ -38,7 +38,7 @@ def login():
 
 
 # ======================
-# ❌ JWT CHECK YẾU (NHƯNG CÓ VERIFY)
+# JWT CHECK YẾU
 # ======================
 def weak_jwt_required(f):
     @wraps(f)
@@ -64,7 +64,7 @@ def weak_jwt_required(f):
 
 
 # ======================
-# 🔴 API CÓ LỖ HỔNG
+# API CÓ LỖ HỔNG
 # ======================
 @app.route("/vuln/admin", methods=["GET"])
 @weak_jwt_required
@@ -79,7 +79,7 @@ def vuln_admin():
 
 
 # ======================
-# ✅ API ĐÃ FIX (VERIFY BẰNG SECRET MẠNH)
+# API ĐÃ FIX
 # ======================
 @app.route("/secure/admin", methods=["GET"])
 def secure_admin():
@@ -115,11 +115,15 @@ def secure_admin():
 def healthz():
     return "OK", 200
 
-
+# ======================
+# TRANG CHỦ
+# ======================
 @app.route("/")
 def home():
     return render_template("index.html")
 
-
+# ======================
+# RUN APP
+# ======================
 if __name__ == "__main__":
     app.run(debug=True)
