@@ -108,6 +108,34 @@ def secure_admin():
         return jsonify({"message": "Invalid token"}), 401
 
 
+def none_vuln_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        token = request.headers.get("Authorization")
+        if not token:
+            return jsonify({"message": "Token missing"}), 401
+
+        try:
+            # ❌ CỐ TÌNH LỖ: KHÔNG verify signature
+            decoded = jwt.decode(token, options={"verify_signature": False})
+            request.user = decoded
+        except Exception as e:
+            return jsonify({"message": "Invalid token", "error": str(e)}), 401
+
+        return f(*args, **kwargs)
+    return wrapper
+
+@app.route("/vuln/none-admin", methods=["GET"])
+@none_vuln_required
+def vuln_none_admin():
+    if request.user.get("role") != "admin":
+        return jsonify({"message": "Access denied", "data": request.user}), 403
+
+    return jsonify({
+        "message": "NONE-ALG VULNERABLE admin access granted",
+        "data": request.user
+    })
+
 # ======================
 # HEALTH CHECK
 # ======================
