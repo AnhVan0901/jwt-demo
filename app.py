@@ -7,11 +7,11 @@ from functools import wraps
 app = Flask(__name__)
 
 # ======================
-# 🔑 CHỈ 1 SECRET DUY NHẤT
+# CHỈ 1 SECRET DUY NHẤT
 # ======================
 JWT_SECRET = os.environ.get(
     "JWT_SECRET",
-    "secret"  # ❌ mặc định yếu để demo local
+    "secret"  # mặc định yếu để demo local
 )
 
 # ======================
@@ -38,7 +38,7 @@ def login():
 
 
 # ======================
-# ❌ JWT CHECK YẾU (NHƯNG CÓ VERIFY)
+# JWT CHECK YẾU
 # ======================
 def weak_jwt_required(f):
     @wraps(f)
@@ -64,7 +64,7 @@ def weak_jwt_required(f):
 
 
 # ======================
-# 🔴 API CÓ LỖ HỔNG
+# API CÓ LỖ HỔNG
 # ======================
 @app.route("/vuln/admin", methods=["GET"])
 @weak_jwt_required
@@ -79,7 +79,7 @@ def vuln_admin():
 
 
 # ======================
-# ✅ API ĐÃ FIX (VERIFY BẰNG SECRET MẠNH)
+# API ĐÃ FIX
 # ======================
 @app.route("/secure/admin", methods=["GET"])
 def secure_admin():
@@ -108,6 +108,34 @@ def secure_admin():
         return jsonify({"message": "Invalid token"}), 401
 
 
+def none_vuln_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        token = request.headers.get("Authorization")
+        if not token:
+            return jsonify({"message": "Token missing"}), 401
+
+        try:
+            # ❌ CỐ TÌNH LỖ: KHÔNG verify signature
+            decoded = jwt.decode(token, options={"verify_signature": False})
+            request.user = decoded
+        except Exception as e:
+            return jsonify({"message": "Invalid token", "error": str(e)}), 401
+
+        return f(*args, **kwargs)
+    return wrapper
+
+@app.route("/vuln/none-admin", methods=["GET"])
+@none_vuln_required
+def vuln_none_admin():
+    if request.user.get("role") != "admin":
+        return jsonify({"message": "Access denied", "data": request.user}), 403
+
+    return jsonify({
+        "message": "NONE-ALG VULNERABLE admin access granted",
+        "data": request.user
+    })
+
 # ======================
 # HEALTH CHECK
 # ======================
@@ -115,11 +143,15 @@ def secure_admin():
 def healthz():
     return "OK", 200
 
-
+# ======================
+# TRANG CHỦ
+# ======================
 @app.route("/")
 def home():
     return render_template("index.html")
 
-
+# ======================
+# RUN APP
+# ======================
 if __name__ == "__main__":
     app.run(debug=True)
